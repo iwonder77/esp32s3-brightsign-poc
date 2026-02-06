@@ -27,6 +27,12 @@
 #include <Ethernet.h>
 #include <EthernetUdp.h>
 
+// ===== NETWORK CONFIG =====
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x01 };  // esp32 MAC address
+IPAddress localIP(192, 168, 50, 2);                   // esp32 static IP address
+IPAddress targetIP(192, 168, 50, 1);                  // BrightSign or Macbook for testing
+const unsigned int UDP_PORT = 5000;
+
 // ===== HARDWARE CONFIG =====
 const unsigned int W5500_CS = 14;    // Chip Select (CS)
 const unsigned int W5500_RST = 9;    // Reset (RST)
@@ -34,62 +40,56 @@ const unsigned int W5500_INT = 10;   // Interrupt (INT) - optional
 const unsigned int W5500_MISO = 12;  // MISO
 const unsigned int W5500_MOSI = 11;  // MOSI
 const unsigned int W5500_SCK = 13;   // SPI Clock (SCK)
-const unsigned int BUTTON1_PIN = 26;
-const unsigned int BUTTON2_PIN = 27;
-const unsigned int BUTTON3_PIN = 32;
 
-// ===== INTERRUPT FLAGS =====
-volatile bool isButton1Pressed = false;
-volatile bool isButton2Pressed = false;
-volatile bool isButton3Pressed = false;
-
-// ===== INTERRUPT TIMESTAMPTS =====
-volatile unsigned long lastButton1Press = 0;
-volatile unsigned long lastButton2Press = 0;
-volatile unsigned long lastButton3Press = 0;
+// ===== TIMING =====
 const unsigned long BUTTON_DEBOUNCE_MS = 250;
+const unsigned long LINK_TIMEOUT = 10000;
+const unsigned long STATUS_INTERVAL_MS = 10000;
 
-// ===== NETWORK CONFIG =====
-byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x01 };  // esp32 MAC address
-IPAddress ip(192, 168, 50, 2);                        // esp32 static IP address
-IPAddress macIp(192, 168, 50, 1);
-const unsigned int UDP_PORT = 5000;
-const unsigned int MAC_UDP_PORT = 5000;
+// ===== BUTTON STRUCT =====
+struct Button {
+  const int pin;
+  const char* command;  // UDP command to send when pressed
+  volatile bool pressed;
+  volatile unsigned long lastPressTime;
+};
 
+Button buttons[] = {
+  { 1, "PLAY:video1.mp4", false, 0 },
+  { 2, "PLAY:video2.mp4", false, 0 },
+  { 3, "PLAY:video3.mp4", false, 0 },
+};
+const uint8_t NUM_BUTTONS = 3;
+
+// ===== GLOBAL STATE =====
 EthernetUDP udp;
-
-// receive buffer
-const size_t BUFFER_SIZE = 256;
-char packetBuffer[BUFFER_SIZE];
 
 // simple state tracking
 bool ethernetInitialized = false;
 bool linkUp = false;
-unsigned long packetsReceived = 0;
 unsigned long packetsSent = 0;
-const unsigned long LINK_TIMEOUT = 10000;
 
 // ===== INTERRUPT FUNCTIONS =====
-void IRAM_ATTR button_isr1() {
-  unsigned long currentButton1Press = millis();
-  if (currentButton1Press - lastButton1Press > BUTTON_DEBOUNCE_MS) {
-    isButton1Pressed = true;
+void IRAM_ATTR buttonISR_0() {
+  unsigned long now = millis();
+  if (now - buttons[0].lastPressTime > BUTTON_DEBOUNCE_MS) {
+    buttons[0].pressed = true;
+    buttons[0].lastPressTime = now;
   }
-  lastButton1Press = currentButton1Press;
 }
-void IRAM_ATTR button_isr2() {
-  unsigned long currentButton2Press = millis();
-  if (currentButton2Press - lastButton2Press > BUTTON_DEBOUNCE_MS) {
-    isButton2Pressed = true;
+void IRAM_ATTR buttonISR_1() {
+  unsigned long now = millis();
+  if (now - buttons[1].lastPressTime > BUTTON_DEBOUNCE_MS) {
+    buttons[1].pressed = true;
+    buttons[1].lastPressTime = now;
   }
-  lastButton2Press = currentButton2Press;
 }
-void IRAM_ATTR button_isr3() {
-  unsigned long currentButton3Press = millis();
-  if (currentButton3Press - lastButton3Press > BUTTON_DEBOUNCE_MS) {
-    isButton3Pressed = true;
+void IRAM_ATTR buttonISR_2() {
+  unsigned long now = millis();
+  if (now - buttons[2].lastPressTime > BUTTON_DEBOUNCE_MS) {
+    buttons[2].pressed = true;
+    buttons[2].lastPressTime = now;
   }
-  lastButton3Press = currentButton3Press;
 }
 
 void setup() {
@@ -102,12 +102,22 @@ void setup() {
   Serial.println("==========================================");
   Serial.println();
 
-  pinMode(BUTTON1_PIN, INPUT);
-  pinMode(BUTTON2_PIN, INPUT);
-  pinMode(BUTTON3_PIN, INPUT);
-  attachInterrupt(BUTTON1_PIN, button_isr1, FALLING);
-  attachInterrupt(BUTTON2_PIN, button_isr2, FALLING);
-  attachInterrupt(BUTTON3_PIN, button_isr3, FALLING);
+  for (uint8_t i = 0; i < NUM_BUTTONS; i++) {
+    pinMode(buttons[i].pin, INPUT);
+    switch (i) {
+      case 0:
+        attachInterrupt(digitalPinToInterrupt(buttons[i].pin), buttonISR_0, FALLING);
+        break;
+      case 1:
+        attachInterrupt(digitalPinToInterrupt(buttons[i].pin), buttonISR_1, FALLING);
+        break;
+      case 2:
+        attachInterrupt(digitalPinToInterrupt(buttons[i].pin), buttonISR_2, FALLING);
+        break;
+      default:
+        break;
+    }
+  }
 
   // initialize SPI with custom pins
   SPI.begin(W5500_SCK, W5500_MISO, W5500_MOSI, W5500_CS);
@@ -126,7 +136,7 @@ void setup() {
   // initialize ethernet
   Serial.println("Step 2: Initialize Ethernet library...");
   Ethernet.init(W5500_CS);
-  Ethernet.begin(mac, ip);
+  Ethernet.begin(mac, localIP);
   Serial.println("  Done.\n");
 
   // check hardware status
@@ -196,17 +206,11 @@ void loop() {
 
   // check for button press and send UDP command accordingly
   if (ethernetInitialized && linkUp) {
-    if (isButton1Pressed) {
-      isButton1Pressed = false;
-      sendUdp(1);
-    }
-    if (isButton2Pressed) {
-      isButton2Pressed = false;
-      sendUdp(2);
-    }
-    if (isButton3Pressed) {
-      isButton3Pressed = false;
-      sendUdp(3);
+    for (uint8_t i = 0; i < NUM_BUTTONS; i++) {
+      if (buttons[i].pressed) {
+        buttons[i].pressed = false;
+        sendUdp(i, buttons[i].command);
+      }
     }
   }
 
@@ -250,30 +254,16 @@ void updateLinkStatus() {
   }
 }
 
-void sendUdp(size_t button) {
-  String response;
-  switch (button) {
-    case 1:
-      response = "FOO";
-      break;
-    case 2:
-      response = "BAR";
-      break;
-    case 3:
-      response = "BAZ";
-      break;
-    default:
-      break;
-  }
+void sendUdp(size_t buttonIndex, const char* command) {
 
-  udp.beginPacket(macIp, MAC_UDP_PORT);  // address and port to send data to
-  udp.print(response);                   // build data
-  udp.endPacket();                       // send it NOW
+  udp.beginPacket(targetIP, UDP_PORT);  // address and port to send data to
+  udp.print(command);                   // build data
+  udp.endPacket();                      // send it NOW
 
   Serial.print("Button {");
-  Serial.print(button);
+  Serial.print(buttonIndex);
   Serial.print("} pressed! Sending: ");
-  Serial.println(response);
+  Serial.println(command);
 
   // update
   packetsSent++;
@@ -281,9 +271,8 @@ void sendUdp(size_t button) {
 
 void printPeriodicStatus() {
   static unsigned long lastStatusTime = 0;
-  const unsigned long STATUS_INTERVAL = 10000;  // Every 10 seconds
 
-  if (millis() - lastStatusTime >= STATUS_INTERVAL) {
+  if (millis() - lastStatusTime >= STATUS_INTERVAL_MS) {
     lastStatusTime = millis();
 
     Serial.print("[");
@@ -292,13 +281,10 @@ void printPeriodicStatus() {
     Serial.print(linkUp ? "UP" : "DOWN");
     Serial.print(", IP=");
     Serial.print(Ethernet.localIP());
-    Serial.print(", RX=");
-    Serial.print(packetsReceived);
     Serial.print(", TX=");
     Serial.println(packetsSent);
   }
 }
-
 void printTimestamp() {
   unsigned long seconds = millis() / 1000;
   unsigned long minutes = seconds / 60;
