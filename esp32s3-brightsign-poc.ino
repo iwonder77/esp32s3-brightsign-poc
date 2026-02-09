@@ -9,15 +9,6 @@
  *    - ESP32 DevKitC v4
  *    - Adafruit WZ5500 Ethernet Breakout 
  *  Notes: 
- *    - Wiring to WZ5500 is as follows:
- *      External 3v3 Power Supply   -> VIN
- *      External GND and ESP32 GND  -> GND
- *      ESP32 GPIO18                -> SCK
- *      ESP32 GPIO19                -> MISO
- *      ESP32 GPIO23                -> MOSI
- *      ESP32 GPIO5                 -> CS
- *      N.C.                        -> IRQ
- *      ESP32 GPIO4                 -> RST
  *    - Commands for testing from Mac terminal
  *
  * (c) Thanksgiving Point Exhibits Electronics Team — 2025
