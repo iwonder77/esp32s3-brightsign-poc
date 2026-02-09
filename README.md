@@ -27,3 +27,4 @@ This sketch mainly serves as a proof of concept to showcase how an ESP32s3 could
    - **Default Gateway**: 0.0.0.0 (not needed)
    - **DNS**: 0.0.0.0 (not needed)
 8. Click done and save the setup to the mounted microSD card.
+9. Follow along with this [video](https://docs.brightsign.biz/how-tos/use-serial-udp-commands) for more info on UDP and Variables in brightAuthor:connected Presentations
