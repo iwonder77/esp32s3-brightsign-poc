@@ -23,7 +23,7 @@ This sketch mainly serves as a proof of concept to showcase how an ESP32s3 could
    ![brightAuthor img 2](./docs/brightAuthor2.png)
 6. Uncheck the "DHCP Enabled" checkbox, address fields will be red/empty but configurable now
    ![brightAuthor img 3](./docs/brightAuthor3.png)
-7. Enter the following addresses:
+7. Enter the following addresses, these will be used by the ESP32S3 sketch:
    - **IP Address**: 192.168.50.10
    - **Subnet Mask**: 255.255.255.0
    - **Default Gateway**: 0.0.0.0 (not needed)
