@@ -25,6 +25,8 @@ IPAddress targetIP(192, 168, 50, 10);                 // BrightSign or Macbook f
 const unsigned int UDP_PORT = 5000;
 
 // ===== HARDWARE CONFIG =====
+// ESP32S3-ETH module wiki specifies the following pinout for onboard WZ5500 use
+// wiki link: https://www.waveshare.com/wiki/ESP32-S3-ETH#ETH_DHCP
 const unsigned int W5500_CS = 14;    // Chip Select (CS)
 const unsigned int W5500_RST = 9;    // Reset (RST)
 const unsigned int W5500_INT = 10;   // Interrupt (INT) - optional
