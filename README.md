@@ -1,4 +1,4 @@
-# Communicating between ESP32s3 + BrightSign w/ UDP Commands
+# ESP32s3 + BrightSign communication w/ UDP Commands
 
 # Overview
 
