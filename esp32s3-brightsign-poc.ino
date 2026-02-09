@@ -30,7 +30,7 @@
 // ===== NETWORK CONFIG =====
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x01 };  // esp32 MAC address
 IPAddress localIP(192, 168, 50, 2);                   // esp32 static IP address
-IPAddress targetIP(192, 168, 50, 1);                  // BrightSign or Macbook for testing
+IPAddress targetIP(192, 168, 50, 10);                 // BrightSign or Macbook for testing
 const unsigned int UDP_PORT = 5000;
 
 // ===== HARDWARE CONFIG =====
@@ -55,9 +55,9 @@ struct Button {
 };
 
 Button buttons[] = {
-  { 1, "PLAY:video1.mp4", false, 0 },
-  { 2, "PLAY:video2.mp4", false, 0 },
-  { 3, "PLAY:video3.mp4", false, 0 },
+  { 1, "var1:video1mp4", false, 0 },
+  { 2, "var2:video2mp4", false, 0 },
+  { 3, "var3:video3mp4", false, 0 },
 };
 const uint8_t NUM_BUTTONS = 3;
 
