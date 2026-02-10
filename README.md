@@ -4,7 +4,7 @@ https://github.com/user-attachments/assets/f0babf4e-8115-4385-bb89-7ba888007aa5
 
 # Overview
 
-This sketch mainly serves as a proof of concept to showcase how an ESP32s3 could send UDP commands to a BrightSign media player via a direct Ethernet connection. In this case, 3 buttons trigger different UDP commands, which show up as raw string texts on the monitor the BrightSign is connected to (see video above). This is the first stepping stone that'll ideally open the door for more interactivity between user inputs and video outputs!
+This sketch mainly serves as a proof of concept to showcase how an ESP32s3 could send UDP commands to a BrightSign media player via a direct Ethernet connection. In this case, 3 buttons trigger different UDP commands, which trigger different videos on the monitor the BrightSign is connected to (see video above). This is the first stepping stone that'll ideally open the door for more interactivity between user inputs and video outputs!
 
 # Hardware
 
