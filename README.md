@@ -1,6 +1,6 @@
 # ESP32s3 + BrightSign communication w/ UDP Commands
 
-https://github.com/user-attachments/assets/a2a625e9-fbd7-42b7-a363-ac68465860a3
+https://github.com/user-attachments/assets/f0babf4e-8115-4385-bb89-7ba888007aa5
 
 # Overview
 
