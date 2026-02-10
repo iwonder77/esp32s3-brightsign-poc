@@ -42,15 +42,15 @@ const unsigned long STATUS_INTERVAL_MS = 10000;
 // ===== BUTTON STRUCT =====
 struct Button {
   const int pin;
-  const char* command;  // UDP command to send when pressed
+  const char* command;  // UDP command to set a BrightSign user variable
   volatile bool pressed;
   volatile unsigned long lastPressTime;
 };
 
 Button buttons[] = {
-  { 1, "var1:video1mp4", false, 0 },
-  { 2, "var2:video2mp4", false, 0 },
-  { 3, "var3:video3mp4", false, 0 },
+  { 1, "gato", false, 0 },
+  { 2, "lake", false, 0 },
+  { 3, "utah", false, 0 },
 };
 const uint8_t NUM_BUTTONS = 3;
 
@@ -202,7 +202,7 @@ void loop() {
     for (uint8_t i = 0; i < NUM_BUTTONS; i++) {
       if (buttons[i].pressed) {
         buttons[i].pressed = false;
-        sendUdp(i, buttons[i].command);
+        sendUdp(i);
       }
     }
   }
@@ -247,19 +247,21 @@ void updateLinkStatus() {
   }
 }
 
-void sendUdp(size_t buttonIndex, const char* command) {
+void sendUdp(size_t buttonIndex) {
+  size_t len = strlen(buttons[buttonIndex].command);
 
+  // build and send packet
   udp.beginPacket(targetIP, UDP_PORT);  // address and port to send data to
-  udp.print(command);                   // build data
-  udp.endPacket();                      // send it NOW
+  udp.write((const uint8_t*)buttons[buttonIndex].command, len);
+  udp.endPacket();  // send it NOW
 
   Serial.print("Button {");
   Serial.print(buttonIndex);
-  Serial.print("} pressed! Sending: ");
-  Serial.println(command);
+  Serial.print("} pressed! Sending the following packet: ");
+  Serial.println(buttons[buttonIndex].command);
 
   // update
-  packetsSent++;
+  packetsSent += 1;
 }
 
 void printPeriodicStatus() {
